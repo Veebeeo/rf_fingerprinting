@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# AI Model & Dataset
+dataset/
+*.keras
+*.h5
+
+# Node.js / Frontend
+frontend/node_modules/
+frontend/dist/
+npm-debug.log
+
+# VS Code
+.vscode/
