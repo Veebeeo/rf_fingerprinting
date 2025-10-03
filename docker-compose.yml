@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./backend
+    container_name: veridian_api
+    ports:
+      - "8000:8000"
+
+  client:
+    build: ./frontend
+    container_name: veridian_client
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
