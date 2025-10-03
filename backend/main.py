@@ -7,6 +7,11 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
@@ -24,8 +29,20 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 
 ANOMALY_THRESHOLD = 0.02
 
-app = FastAPI(title="Veridian Spectrum Intelligence API")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="Spectrum Intelligence API")
+origins = [
+    "http://localhost:3000", 
+    "http://127.0.0.1:3000", 
+    "https://rf-fingerprinting.vercel.app/",  
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class PredictionResponse(BaseModel):
     predicted_device: str
@@ -79,6 +96,8 @@ def read_root():
 
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
+    logger.info(f"Received file: {file.filename}")
+    
     temp_dir = "temp_uploads"
     os.makedirs(temp_dir, exist_ok=True)
     temp_file_path = os.path.join(temp_dir, file.filename)
@@ -104,6 +123,10 @@ async def predict_signal(file: UploadFile = File(...)):
         demodulated_data = None
         if predicted_device_name == "QPSK": demodulated_data = demodulate_qpsk(signal_data)
         return PredictionResponse(predicted_device=predicted_device_name, confidence_score=confidence, is_anomaly=False, details=details, saliency_map=saliency_map, signal_magnitude=signal_magnitude, demodulated_data=demodulated_data)
+    except Exception as e:
+        logger.error(f"An error occurred: {e}", exc_info=True)
+        
+        raise
     finally:
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
