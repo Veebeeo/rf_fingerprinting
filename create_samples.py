@@ -6,19 +6,19 @@ source_directory = 'frontend/public'
 
 
 original_files = [
-    '1_stealth_incursion.npy',
-    '2_disruption_attack.npy',
-    'real_world_QPSK_test.npy'
+    'demo_1_stealth_incursion.npy',
+    'demo_2_disruption_attack.npy',
+    'demo_real_world_QPSK_test.npy'
 ]
 
 
-num_points_to_keep = 150000
+num_points_to_keep = 50000
 
 print("Starting to create smaller demo samples...")
 
 for filename in original_files:
     original_file_path = os.path.join(source_directory, filename)
-    new_filename = f"demo_{filename}"
+    new_filename = f"samp_{filename}"
     new_file_path = os.path.join(source_directory, new_filename)
 
     try:

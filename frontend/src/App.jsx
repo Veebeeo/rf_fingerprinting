@@ -110,19 +110,19 @@ function App() {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Fast Demo Sample</h2>
             <div className="flex flex-col space-y-4">
                  <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_1_stealth_incursion.npy?download=true', 'demo_1_stealth_incursion.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/samp_demo_1_stealth_incursion.npy?download=true', 'demo_1_stealth_incursion.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
                     Load Stealth Demo
                 </button>
                  <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_2_disruption_attack.npy?download=true', 'demo_2_disruption_attack.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/samp_demo_2_disruption_attack.npy?download=true', 'demo_2_disruption_attack.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
                     Load Disruption Demo
                 </button>
                 <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_real_world_QPSK_test.npy?download=true', 'demo_real_world_QPSK_test.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/samp_demo_real_world_QPSK_test.npy?download=true', 'demo_real_world_QPSK_test.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
                     Load QPSK Demo
