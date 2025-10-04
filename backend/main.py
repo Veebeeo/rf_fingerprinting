@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Model Loading (No Changes) ---
+# --- Model Loading & Config (No Changes) ---
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -102,21 +102,23 @@ async def predict_signal(file: UploadFile = File(...)):
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
-        normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
-        
+
+        # --- THIS IS THE CORRECTED LOGIC ---
+        if is_anomaly:
+            # For anomalous signals, normalize relative to the signal's own peak error to show its shape.
+            normalized_error_map = (error_map - np.min(error_map)) / (np.max(error_map) - np.min(error_map) + 1e-8)
+        else:
+            # For normal signals, normalize against the fixed threshold to show that the error is low.
+            normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
+
         signal_magnitude = np.abs(signal_data).tolist()
         demodulated_data = None
 
         if is_anomaly:
-            # --- ANOMALY LOGIC ---
-            # If an anomaly is detected, we override the classification.
             predicted_device_name = "Unknown Anomaly"
-            # The confidence score now represents the anomaly's reconstruction error.
             confidence = float(overall_reconstruction_error)
             details = {"reconstruction_error": confidence}
         else:
-            # --- NORMAL CLASSIFICATION LOGIC ---
-            # If no anomaly, proceed with the classifier as usual.
             prediction = model.predict(processed_signal_np, verbose=0)[0]
             predicted_index = np.argmax(prediction)
             confidence = float(np.max(prediction))
