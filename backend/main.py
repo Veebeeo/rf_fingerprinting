@@ -30,16 +30,13 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://rf-fingerprinting.vercel.app",
-    "https://rf-fingerprinting-qph0zbsof-viseshs-projects-015b9a29.vercel.app/",
-]
+
+allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origin_regex=allowed_origins_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
