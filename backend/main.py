@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+# --- Model Loading ---
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -30,7 +30,7 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
-
+# --- CORS Middleware ---
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 app.add_middleware(
     CORSMiddleware,
@@ -45,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# --- Pydantic Model ---
 class PredictionResponse(BaseModel):
     predicted_device: str
     confidence_score: float
@@ -54,7 +54,7 @@ class PredictionResponse(BaseModel):
     signal_magnitude: Optional[List[float]] = None
     reconstruction_error_map: Optional[List[float]] = None
 
-
+# --- Helper Functions ---
 def preprocess_single_signal_array(signal_array: np.ndarray):
     if signal_array.shape[0] < 128:
         pad_width = 128 - signal_array.shape[0]
@@ -68,7 +68,7 @@ def preprocess_single_signal_array(signal_array: np.ndarray):
 def read_root():
     return {"message": "Welcome to the Spectrum Intelligence API."}
 
-# --- predict_signal Function ---
+# --- predict_signal Function with All Fixes ---
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
@@ -91,15 +91,15 @@ async def predict_signal(file: UploadFile = File(...)):
         overall_reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction))
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
+        # FIX 1: Correct normalization for the error map visualization
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
         normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
         
         signal_magnitude = np.abs(signal_data).tolist()
 
-        
+        # FIX 2: Logic to handle anomaly classification override
         if is_anomaly:
             predicted_device_name = "Unknown Signal (Anomaly)"
-            # Confidence for an anomaly is the reconstruction error itself
             confidence = float(overall_reconstruction_error)
             details = { "reconstruction_error": confidence }
         else:
