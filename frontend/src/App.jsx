@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
+import Plot from 'react-plotly.js';
 
 const AlertIcon = ({ colorClass }) => (
     <svg className={`w-6 h-6 mr-2 ${colorClass}`} fill="currentColor" viewBox="0 0 20 20">
@@ -31,19 +32,15 @@ function App() {
     setIsLoading(true);
     setAnalysisResult(null);
     setError(null);
-
     const formData = new FormData();
     formData.append('file', selectedFile);
-
     try {
-
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.1:8000';
       const url = `${apiUrl}/predict/`;
-      
       const response = await axios.post(url, formData);
       setAnalysisResult(response.data);
     } catch (err) {
-      setError("Analysis failed. The backend might be offline or starting up. Please wait 30 seconds and try again.");
+      setError("Analysis failed. Backend might be offline or file is invalid.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -64,47 +61,88 @@ function App() {
   return (
     <div className="bg-dreamy font-sans min-h-screen">
       <header className="bg-ocean text-white shadow-lg">
-        <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl font-bold leading-tight">Spectrum Intelligence</h1>
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl font-bold leading-tight">Veridian Spectrum Intelligence</h1>
         </div>
       </header>
       
-      <main className="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
-        <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Signal Upload</h2>
-          <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-56 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-              <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-              <p className="text-xs text-gray-400">RF signal file (.npy)</p>
-              {selectedFile && <p className="text-sm text-ocean mt-4 font-semibold">{selectedFile.name}</p>}
+      <main className="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 flex flex-col space-y-8">
+          <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Signal Upload</h2>
+            <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-56 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                <p className="text-xs text-gray-400">RF signal file (.npy)</p>
+                {selectedFile && <p className="text-sm text-ocean mt-4 font-semibold">{selectedFile.name}</p>}
+              </div>
+              <input ref={fileInputRef} id="dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept=".npy" />
+            </label>
+            <div className="mt-6">
+              <button onClick={handleAnalyze} disabled={isLoading || !selectedFile} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                {isLoading ? "Analyzing..." : "Analyze Signal"}
+              </button>
             </div>
-            <input ref={fileInputRef} id="dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept=".npy" />
-          </label>
-
-          <div className="mt-6">
-            <button
-              onClick={handleAnalyze}
-              disabled={isLoading || !selectedFile}
-              className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors"
-            >
-              {isLoading ? "Analyzing..." : "Analyze Signal"}
-            </button>
           </div>
-
-          {error && (
-            <div className="mt-6 p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg flex items-center">
-              <strong>Error:</strong>&nbsp;{error}
-            </div>
-          )}
-
+          {error && ( <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg"> <strong>Error:</strong>&nbsp;{error} </div> )}
           {analysisResult && (
-            <div className={`mt-8 p-6 border ${getResultCardStyle()} rounded-lg`}>
+            <div className={`p-6 border ${getResultCardStyle()} rounded-lg shadow-md`}>
               <h3 className={`text-xl font-bold mb-4 flex items-center ${getResultTextStyle()}`}> <AlertIcon colorClass={getResultTextStyle()} /> Analysis Complete </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-lg"> <span className="font-medium text-gray-600">Classification:</span> <span className={`font-bold px-3 py-1 rounded-full text-sm ${getResultTextStyle()} ${getResultCardStyle().split(' ')[1]}`}> {analysisResult.predicted_device.toUpperCase()} </span> </div>
                 <div className="flex justify-between items-center text-lg"> <span className="font-medium text-gray-600">Confidence:</span> <span className={`font-mono font-semibold ${getResultTextStyle()}`}> {(analysisResult.confidence_score * 100).toFixed(4)}% </span> </div>
                 <div className="flex justify-between items-center text-lg"> <span className="font-medium text-gray-600">Anomaly Detected:</span> <span className={`font-mono font-semibold ${getResultTextStyle()}`}> {analysisResult.is_anomaly ? "YES" : "NO"} </span> </div>
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-2 flex flex-col space-y-8">
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="font-bold text-gray-800 text-lg mb-2">Analysis Explanation (XAI)</h3>
+            <p className="text-sm text-gray-500 mb-4">The yellow bars show which parts of the signal were most important for the AI's decision.</p>
+            {analysisResult && analysisResult.saliency_map && analysisResult.signal_magnitude ? (
+              <Plot
+                data={[
+                  {
+                    x: Array.from(Array(analysisResult.signal_magnitude.length).keys()),
+                    y: analysisResult.signal_magnitude,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { color: '#006989', width: 2 },
+                    name: 'Signal Magnitude'
+                  },
+                  {
+                    x: Array.from(Array(analysisResult.saliency_map.length).keys()),
+                    y: analysisResult.saliency_map.map(s => s * Math.max(...analysisResult.signal_magnitude)),
+                    type: 'bar',
+                    marker: { color: '#FBBF24', opacity: 0.5 },
+                    name: 'AI Focus (Saliency)'
+                  }
+                ]}
+                layout={{
+                  barmode: 'overlay',
+                  showlegend: false,
+                  autosize: true,
+                  margin: { l: 40, r: 20, b: 40, t: 20 },
+                  paper_bgcolor: 'transparent',
+                  plot_bgcolor: '#f9fafb',
+                  font: { color: '#374151' }
+                }}
+                useResizeHandler={true}
+                className="w-full h-64"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed"><p className="text-gray-400">Analyze a signal to see the XAI plot.</p></div>
+            )}
+          </div>
+          {analysisResult && analysisResult.demodulated_data && (
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <h3 className="font-bold text-gray-800 text-lg mb-2">Demodulated Data (QPSK)</h3>
+              <p className="text-sm text-gray-500 mb-4">The raw binary data extracted from the signal.</p>
+              <code className="block bg-gray-100 p-4 rounded-md text-gray-800 text-xs break-words max-h-48 overflow-y-auto">
+                {analysisResult.demodulated_data}
+              </code>
             </div>
           )}
         </div>
