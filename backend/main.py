@@ -108,6 +108,13 @@ async def predict_signal(file: UploadFile = File(...)):
     try:
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+        with open(temp_file_path, 'r', errors='ignore') as f:
+            first_line = f.readline()
+            if first_line.startswith('version https://git-lfs.github.com/spec/v1'):
+                error_msg = "File is a Git LFS pointer, not the actual data file. Please ensure your deployment service (Render) is correctly pulling LFS files."
+                logger.error(error_msg)
+                
+                raise Exception(error_msg)
         signal_data = np.load(temp_file_path, allow_pickle=True)
         if signal_data.ndim == 2: signal_data = signal_data[0, :]
         processed_signal = preprocess_single_signal_array(signal_data)
