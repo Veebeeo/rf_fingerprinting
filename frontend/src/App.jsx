@@ -65,7 +65,7 @@ function App() {
     <div className="bg-dreamy font-sans min-h-screen">
       <header className="bg-ocean text-white shadow-lg">
         <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl font-bold leading-tight">Veridian Spectrum Intelligence</h1>
+          <h1 className="text-3xl font-bold leading-tight">Spectrum Intelligence</h1>
         </div>
       </header>
       
