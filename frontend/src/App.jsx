@@ -27,7 +27,6 @@ function App() {
     }
   };
   
-  // NEW: Function to load sample files from a URL
   const handleSampleFile = async (fileUrl, sampleFileName) => {
     setIsLoading(true);
     setAnalysisResult(null);
@@ -89,6 +88,7 @@ function App() {
       </header>
       
       <main className="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* --- LEFT COLUMN (INPUTS) --- */}
         <div className="lg:col-span-1 flex flex-col space-y-8">
           <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Signal Upload</h2>
@@ -107,7 +107,6 @@ function App() {
             </div>
           </div>
 
-          {/* NEW: Card for loading the three sample files */}
           <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Sample</h2>
             <div className="flex flex-col space-y-4">
@@ -131,8 +130,15 @@ function App() {
                 </button>
             </div>
           </div>
-          
-          {error && ( <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg"> <strong>Error:</strong>&nbsp;{error} </div> )}
+        </div>
+
+        {/* --- RIGHT COLUMN (RESULTS) --- */}
+        <div className="lg:col-span-2 flex flex-col space-y-8">
+          {error && (
+            <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg">
+              <strong>Error:</strong>&nbsp;{error}
+            </div>
+          )}
           
           {analysisResult && (
             <div className={`p-6 border ${getResultCardStyle()} rounded-lg shadow-md`}>
@@ -144,9 +150,7 @@ function App() {
               </div>
             </div>
           )}
-        </div>
 
-        <div className="lg:col-span-2 flex flex-col space-y-8">
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
             <h3 className="font-bold text-gray-800 text-lg mb-2">Analysis Explanation (XAI)</h3>
             <p className="text-sm text-gray-500 mb-4">The yellow bars show which parts of the signal were most important for the AI's decision.</p>
@@ -182,9 +186,10 @@ function App() {
                 className="w-full h-64"
               />
             ) : (
-              <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed"><p className="text-gray-400">Analyze a signal to see the XAI plot.</p></div>
+              <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed"><p className="text-gray-400">Analyze a signal to see the results.</p></div>
             )}
           </div>
+
           {analysisResult && analysisResult.demodulated_data && (
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
               <h3 className="font-bold text-gray-800 text-lg mb-2">Demodulated Data (QPSK)</h3>
