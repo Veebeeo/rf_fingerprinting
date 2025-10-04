@@ -12,6 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- Model Loading (No Changes) ---
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -29,6 +30,7 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
+# --- CORS Middleware (No Changes) ---
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Pydantic Model (No Changes) ---
 class PredictionResponse(BaseModel):
     predicted_device: str
     confidence_score: float
@@ -52,6 +55,7 @@ class PredictionResponse(BaseModel):
     reconstruction_error_map: Optional[List[float]] = None
     demodulated_data: Optional[str] = None
 
+# --- Helper Functions (No Changes) ---
 def preprocess_single_signal_array(signal_array: np.ndarray):
     if signal_array.shape[0] < 128:
         pad_width = 128 - signal_array.shape[0]
@@ -75,6 +79,7 @@ def demodulate_qpsk(signal_data: np.ndarray) -> str:
 def read_root():
     return {"message": "Welcome to the Spectrum Intelligence API."}
 
+# --- Updated predict_signal Function ---
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
@@ -92,23 +97,34 @@ async def predict_signal(file: UploadFile = File(...)):
         processed_signal_np = preprocess_single_signal_array(signal_data)
         
         reconstruction = anomaly_model.predict(processed_signal_np, verbose=0)
-        prediction = model.predict(processed_signal_np, verbose=0)[0]
-
+        
         overall_reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction))
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
         normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
-
-        predicted_index = np.argmax(prediction)
-        confidence = float(np.max(prediction))
-        predicted_device_name = DEVICE_CLASSES[predicted_index]
-        details = {DEVICE_CLASSES[j]: float(prediction[j]) for j in range(len(prediction))}
-        
-        demodulated_data = None
-        if predicted_device_name == "QPSK": demodulated_data = demodulate_qpsk(signal_data)
         
         signal_magnitude = np.abs(signal_data).tolist()
+        demodulated_data = None
+
+        if is_anomaly:
+            # --- ANOMALY LOGIC ---
+            # If an anomaly is detected, we override the classification.
+            predicted_device_name = "Unknown Anomaly"
+            # The confidence score now represents the anomaly's reconstruction error.
+            confidence = float(overall_reconstruction_error)
+            details = {"reconstruction_error": confidence}
+        else:
+            # --- NORMAL CLASSIFICATION LOGIC ---
+            # If no anomaly, proceed with the classifier as usual.
+            prediction = model.predict(processed_signal_np, verbose=0)[0]
+            predicted_index = np.argmax(prediction)
+            confidence = float(np.max(prediction))
+            predicted_device_name = DEVICE_CLASSES[predicted_index]
+            details = {DEVICE_CLASSES[j]: float(prediction[j]) for j in range(len(prediction))}
+            
+            if predicted_device_name == "QPSK":
+                demodulated_data = demodulate_qpsk(signal_data)
 
         return PredictionResponse(
             predicted_device=predicted_device_name, 
