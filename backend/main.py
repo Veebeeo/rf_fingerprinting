@@ -29,7 +29,6 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
-
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +43,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Updated Pydantic Model ---
 class PredictionResponse(BaseModel):
     predicted_device: str
     confidence_score: float
@@ -53,7 +51,6 @@ class PredictionResponse(BaseModel):
     signal_magnitude: Optional[List[float]] = None
     reconstruction_error_map: Optional[List[float]] = None
     demodulated_data: Optional[str] = None
-
 
 def preprocess_single_signal_array(signal_array: np.ndarray):
     if signal_array.shape[0] < 128:
@@ -97,13 +94,11 @@ async def predict_signal(file: UploadFile = File(...)):
         reconstruction = anomaly_model.predict(processed_signal_np, verbose=0)
         prediction = model.predict(processed_signal_np, verbose=0)[0]
 
-       
         overall_reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction))
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
-        
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
-        normalized_error_map = (error_map - np.min(error_map)) / (np.max(error_map) - np.min(error_map) + 1e-8)
+        normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
 
         predicted_index = np.argmax(prediction)
         confidence = float(np.max(prediction))
