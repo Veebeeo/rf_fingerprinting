@@ -34,7 +34,7 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://rf-fingerprinting.vercel.app",
-    "https://rf-fingerprinting-l8rx66h7c-viseshs-projects-015b9a29.vercel.app/",
+    "https://rf-fingerprinting-qph0zbsof-viseshs-projects-015b9a29.vercel.app/",
 ]
 
 app.add_middleware(
