@@ -12,6 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- Model Loading ---
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -29,7 +30,7 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
-
+# --- CORS Middleware ---
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# --- Pydantic Model ---
 class PredictionResponse(BaseModel):
     predicted_device: str
     confidence_score: float
@@ -53,7 +54,7 @@ class PredictionResponse(BaseModel):
     signal_magnitude: Optional[List[float]] = None
     reconstruction_error_map: Optional[List[float]] = None
 
-
+# --- Helper Functions ---
 def preprocess_single_signal_array(signal_array: np.ndarray):
     if signal_array.shape[0] < 128:
         pad_width = 128 - signal_array.shape[0]
@@ -67,7 +68,7 @@ def preprocess_single_signal_array(signal_array: np.ndarray):
 def read_root():
     return {"message": "Welcome to the Spectrum Intelligence API."}
 
-
+# --- predict_signal Function with Final Fix ---
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
@@ -90,18 +91,24 @@ async def predict_signal(file: UploadFile = File(...)):
         overall_reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction))
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
-        
+        # --- THIS IS THE FINAL, ROBUST FIX FOR THE VISUALIZATION ---
+        # 1. Calculate the error for each time step
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
         
+        # 2. Calculate statistics to find a dynamic threshold for "significant" error
+        mean_error = np.mean(error_map)
+        std_error = np.std(error_map)
+        # We define a significant error as anything 2 standard deviations above the mean
+        dynamic_threshold = mean_error + (2 * std_error)
         
-        min_error = np.min(error_map)
-        max_error = np.max(error_map)
+        # 3. Keep only the errors that are above this threshold, set others to zero
+        significant_errors = np.where(error_map > dynamic_threshold, error_map, 0)
         
-        normalized_map = (error_map - min_error) / (max_error - min_error + 1e-8)
+        # 4. Normalize this new, filtered map to get the final plot values
+        max_significant_error = np.max(significant_errors)
+        # Add a small epsilon to avoid division by zero if there are no significant errors
+        final_error_map = significant_errors / (max_significant_error + 1e-8)
         
-        
-        final_error_map = np.power(normalized_map, 3)
-
         signal_magnitude_processed = np.abs(processed_signal_np[0, :, 0] + 1j * processed_signal_np[0, :, 1]).tolist()
 
         if is_anomaly:
