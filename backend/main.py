@@ -12,7 +12,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -29,19 +28,35 @@ print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 
 ANOMALY_THRESHOLD = 0.02
 
+@tf.function
+def predict_and_get_saliency(input_tensor, class_index):
+    with tf.GradientTape() as tape:
+        tape.watch(input_tensor)
+        predictions = model(input_tensor, training=False)
+        top_prediction = predictions[0, class_index]
+    grads = tape.gradient(top_prediction, input_tensor)
+    return predictions, grads
+
+@tf.function
+def anomaly_and_get_saliency(input_tensor):
+    with tf.GradientTape() as tape:
+        tape.watch(input_tensor)
+        reconstruction = anomaly_model(input_tensor, training=False)
+        loss = tf.reduce_mean(tf.square(input_tensor - reconstruction))
+    grads = tape.gradient(loss, input_tensor)
+    return reconstruction, grads
+
 app = FastAPI(title="Spectrum Intelligence API")
 
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
-    
     allow_origins=[
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        "http://12.0.0.1:3000",
         "https://rf-fingerprinting.vercel.app"
     ],
-    
     allow_origin_regex=allowed_origins_regex,
     allow_credentials=True,
     allow_methods=["*"],
@@ -66,24 +81,6 @@ def preprocess_single_signal_array(signal_array: np.ndarray):
     signal_real_imag = np.stack([signal_array.real, signal_array.imag], axis=-1)
     return np.expand_dims(signal_real_imag, axis=0)
 
-def get_saliency_map(input_model, preprocessed_signal, class_index):
-    input_tensor = tf.convert_to_tensor(preprocessed_signal, dtype=tf.float32)
-    with tf.GradientTape() as tape:
-        tape.watch(input_tensor)
-        predictions = input_model(input_tensor)
-        if input_model == anomaly_model:
-            loss = tf.keras.losses.mse(input_tensor, predictions)
-            top_prediction = tf.reduce_mean(loss)
-        else:
-            top_prediction = predictions[0, class_index]
-    grads = tape.gradient(top_prediction, input_tensor)
-    if grads is None: return np.zeros(preprocessed_signal.shape[1]).tolist()
-    saliency = np.mean(np.abs(grads.numpy()), axis=-1).flatten()
-    min_val, max_val = np.min(saliency), np.max(saliency)
-    if max_val - min_val > 1e-8: saliency = (saliency - min_val) / (max_val - min_val)
-    else: saliency = np.zeros(saliency.shape)
-    return saliency.tolist()
-
 def demodulate_qpsk(signal_data: np.ndarray) -> str:
     bits = ""
     symbols = signal_data[::2]
@@ -101,42 +98,38 @@ def read_root():
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
-    
     temp_dir = "temp_uploads"
     os.makedirs(temp_dir, exist_ok=True)
     temp_file_path = os.path.join(temp_dir, file.filename)
     try:
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        with open(temp_file_path, 'r', errors='ignore') as f:
-            first_line = f.readline()
-            if first_line.startswith('version https://git-lfs.github.com/spec/v1'):
-                error_msg = "File is a Git LFS pointer, not the actual data file. Please ensure your deployment service (Render) is correctly pulling LFS files."
-                logger.error(error_msg)
-                
-                raise Exception(error_msg)
         signal_data = np.load(temp_file_path, allow_pickle=True)
         if signal_data.ndim == 2: signal_data = signal_data[0, :]
-        processed_signal = preprocess_single_signal_array(signal_data)
+        processed_signal_np = preprocess_single_signal_array(signal_data)
         signal_magnitude = np.abs(signal_data).tolist()
-        reconstruction = anomaly_model.predict(processed_signal, verbose=0)
-        reconstruction_error = np.mean(np.square(processed_signal - reconstruction))
+        processed_signal_tf = tf.convert_to_tensor(processed_signal_np, dtype=tf.float32)
+        reconstruction, anomaly_grads = anomaly_and_get_saliency(processed_signal_tf)
+        reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction.numpy()))
         is_anomaly = reconstruction_error > ANOMALY_THRESHOLD
         if is_anomaly:
-            saliency_map = get_saliency_map(anomaly_model, processed_signal, 0)
-            return PredictionResponse(predicted_device="Unknown Signal (Anomaly)", confidence_score=float(reconstruction_error), is_anomaly=True, details={"reconstruction_error": float(reconstruction_error)}, saliency_map=saliency_map, signal_magnitude=signal_magnitude)
-        prediction = model.predict(processed_signal, verbose=0)[0]
-        predicted_index = np.argmax(prediction)
+            saliency = np.mean(np.abs(anomaly_grads.numpy()), axis=-1).flatten()
+            saliency = (saliency - np.min(saliency)) / (np.max(saliency) - np.min(saliency) + 1e-8)
+            return PredictionResponse(predicted_device="Unknown Signal (Anomaly)", confidence_score=float(reconstruction_error), is_anomaly=True, details={"reconstruction_error": float(reconstruction_error)}, saliency_map=saliency.tolist(), signal_magnitude=signal_magnitude)
+        initial_prediction = model.predict(processed_signal_np, verbose=0)[0]
+        predicted_index = np.argmax(initial_prediction)
+        prediction_tf, grads_tf = predict_and_get_saliency(processed_signal_tf, tf.constant(predicted_index))
+        prediction = prediction_tf.numpy()[0]
         confidence = float(np.max(prediction))
         predicted_device_name = DEVICE_CLASSES[predicted_index]
         details = {DEVICE_CLASSES[j]: float(prediction[j]) for j in range(len(prediction))}
-        saliency_map = get_saliency_map(model, processed_signal, predicted_index)
+        saliency = np.mean(np.abs(grads_tf.numpy()), axis=-1).flatten()
+        saliency = (saliency - np.min(saliency)) / (np.max(saliency) - np.min(saliency) + 1e-8)
         demodulated_data = None
         if predicted_device_name == "QPSK": demodulated_data = demodulate_qpsk(signal_data)
-        return PredictionResponse(predicted_device=predicted_device_name, confidence_score=confidence, is_anomaly=False, details=details, saliency_map=saliency_map, signal_magnitude=signal_magnitude, demodulated_data=demodulated_data)
+        return PredictionResponse(predicted_device=predicted_device_name, confidence_score=confidence, is_anomaly=False, details=details, saliency_map=saliency.tolist(), signal_magnitude=signal_magnitude, demodulated_data=demodulated_data)
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=True)
-        
         raise
     finally:
         if os.path.exists(temp_file_path):
