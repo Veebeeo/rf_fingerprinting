@@ -54,7 +54,7 @@ class PredictionResponse(BaseModel):
     signal_magnitude: Optional[List[float]] = None
     reconstruction_error_map: Optional[List[float]] = None
 
-# --- Helper Function (No Changes) ---
+
 def preprocess_single_signal_array(signal_array: np.ndarray):
     if signal_array.shape[0] < 128:
         pad_width = 128 - signal_array.shape[0]
@@ -68,7 +68,7 @@ def preprocess_single_signal_array(signal_array: np.ndarray):
 def read_root():
     return {"message": "Welcome to the Spectrum Intelligence API."}
 
-
+# --- predict_signal Function ---
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
@@ -93,14 +93,21 @@ async def predict_signal(file: UploadFile = File(...)):
 
         error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
         normalized_error_map = np.clip(error_map / ANOMALY_THRESHOLD, 0, 1)
-
-        predicted_index = np.argmax(prediction)
-        confidence = float(np.max(prediction))
-        predicted_device_name = DEVICE_CLASSES[predicted_index]
-        details = {DEVICE_CLASSES[j]: float(prediction[j]) for j in range(len(prediction))}
         
         signal_magnitude = np.abs(signal_data).tolist()
 
+        
+        if is_anomaly:
+            predicted_device_name = "Unknown Signal (Anomaly)"
+            # Confidence for an anomaly is the reconstruction error itself
+            confidence = float(overall_reconstruction_error)
+            details = { "reconstruction_error": confidence }
+        else:
+            predicted_index = np.argmax(prediction)
+            confidence = float(np.max(prediction))
+            predicted_device_name = DEVICE_CLASSES[predicted_index]
+            details = {DEVICE_CLASSES[j]: float(prediction[j]) for j in range(len(prediction))}
+        
         return PredictionResponse(
             predicted_device=predicted_device_name, 
             confidence_score=confidence, 

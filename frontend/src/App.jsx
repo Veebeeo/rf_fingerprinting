@@ -88,6 +88,7 @@ function App() {
       </header>
       
       <main className="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         <div className="lg:col-span-1 flex flex-col space-y-8">
           <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Signal Upload</h2>
@@ -131,8 +132,14 @@ function App() {
           </div>
         </div>
 
+        
         <div className="lg:col-span-2 flex flex-col space-y-8">
-          {error && ( <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg"> <strong>Error:</strong>&nbsp{error} </div> )}
+          {error && (
+            <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg">
+              <strong>Error:</strong>&nbsp;{error}
+            </div>
+          )}
+          
           {analysisResult && (
             <div className={`p-6 border ${getResultCardStyle()} rounded-lg shadow-md`}>
               <h3 className={`text-xl font-bold mb-4 flex items-center ${getResultTextStyle()}`}> <AlertIcon colorClass={getResultTextStyle()} /> Analysis Complete </h3>
@@ -176,7 +183,7 @@ function App() {
                   font: { color: '#374151' }
                 }}
                 useResizeHandler={true}
-                className="w-full h-96" 
+                className="w-full h-96"
               />
             ) : (
               <div className="flex items-center justify-center h-96 bg-gray-50 rounded-lg border-2 border-dashed"><p className="text-gray-400">Analyze a signal to see the results.</p></div>
