@@ -12,7 +12,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Model Loading ---
 MODEL_PATH = "rf_fingerprint_model_real.keras"
 print(f"Loading classifier model from {MODEL_PATH}...")
 model = tf.keras.models.load_model(MODEL_PATH)
@@ -27,13 +26,10 @@ with open('device_classes.txt', 'r') as f:
     DEVICE_CLASSES = [line.strip() for line in f.readlines()]
 print(f"Loaded {len(DEVICE_CLASSES)} device classes.")
 
-# Threshold for deciding IF a signal is an anomaly
-ANOMALY_THRESHOLD = 0.02 
-# NEW: Separate, larger threshold ONLY for scaling the plot visuals
-VISUALIZATION_THRESHOLD = 0.05 
+ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
-# --- CORS Middleware ---
+
 allowed_origins_regex = r"https?://rf-fingerprinting-.*\.vercel\.app"
 app.add_middleware(
     CORSMiddleware,
@@ -48,7 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Pydantic Model ---
+
 class PredictionResponse(BaseModel):
     predicted_device: str
     confidence_score: float
@@ -57,9 +53,8 @@ class PredictionResponse(BaseModel):
     signal_magnitude: Optional[List[float]] = None
     reconstruction_error_map: Optional[List[float]] = None
 
-# --- Helper Functions ---
+
 def preprocess_single_signal_array(signal_array: np.ndarray):
-    # This ensures the signal data is always 128 samples long for the models
     if signal_array.shape[0] < 128:
         pad_width = 128 - signal_array.shape[0]
         signal_array = np.pad(signal_array, (0, pad_width), 'constant', constant_values=(0))
@@ -72,7 +67,7 @@ def preprocess_single_signal_array(signal_array: np.ndarray):
 def read_root():
     return {"message": "Welcome to the Spectrum Intelligence API."}
 
-# --- predict_signal Function with All Fixes ---
+
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
     logger.info(f"Received file: {file.filename}")
@@ -95,11 +90,18 @@ async def predict_signal(file: UploadFile = File(...)):
         overall_reconstruction_error = np.mean(np.square(processed_signal_np - reconstruction))
         is_anomaly = overall_reconstruction_error > ANOMALY_THRESHOLD
 
-        # THIS IS THE FINAL FIX: Normalizing against the new VISUALIZATION_THRESHOLD
-        error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
-        normalized_error_map = np.clip(error_map / VISUALIZATION_THRESHOLD, 0, 1)
         
-        # We need to plot against the magnitude of the *processed* signal (which is 128 samples)
+        error_map = np.mean(np.abs(processed_signal_np - reconstruction), axis=2).flatten()
+        
+        
+        min_error = np.min(error_map)
+        max_error = np.max(error_map)
+        
+        normalized_map = (error_map - min_error) / (max_error - min_error + 1e-8)
+        
+        
+        final_error_map = np.power(normalized_map, 3)
+
         signal_magnitude_processed = np.abs(processed_signal_np[0, :, 0] + 1j * processed_signal_np[0, :, 1]).tolist()
 
         if is_anomaly:
@@ -118,7 +120,7 @@ async def predict_signal(file: UploadFile = File(...)):
             is_anomaly=is_anomaly, 
             details=details, 
             signal_magnitude=signal_magnitude_processed,
-            reconstruction_error_map=normalized_error_map.tolist()
+            reconstruction_error_map=final_error_map.tolist()
         )
 
     except Exception as e:
