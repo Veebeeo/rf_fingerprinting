@@ -31,9 +31,10 @@ ANOMALY_THRESHOLD = 0.02
 
 app = FastAPI(title="Spectrum Intelligence API")
 origins = [
-    "http://localhost:3000", 
-    "http://127.0.0.1:3000", 
-    "https://rf-fingerprinting.vercel.app/",  
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://rf-fingerprinting.vercel.app",
+    "https://rf-fingerprinting-l8rx66h7c-viseshs-projects-015b9a29.vercel.app",
 ]
 
 app.add_middleware(
@@ -92,7 +93,7 @@ def demodulate_qpsk(signal_data: np.ndarray) -> str:
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Veridian Spectrum Intelligence API."}
+    return {"message": "Welcome to the Spectrum Intelligence API."}
 
 @app.post("/predict/", response_model=PredictionResponse)
 async def predict_signal(file: UploadFile = File(...)):
