@@ -108,7 +108,7 @@ async def predict_signal(file: UploadFile = File(...)):
     try:
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        signal_data = np.load(temp_file_path)
+        signal_data = np.load(temp_file_path, allow_pickle=True)
         if signal_data.ndim == 2: signal_data = signal_data[0, :]
         processed_signal = preprocess_single_signal_array(signal_data)
         signal_magnitude = np.abs(signal_data).tolist()
