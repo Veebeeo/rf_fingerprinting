@@ -26,6 +26,30 @@ function App() {
       setError("Invalid file type. Please upload a .npy file.");
     }
   };
+  
+  
+  const handleSampleFile = async (sampleFileName) => {
+    setIsLoading(true);
+    setAnalysisResult(null);
+    setError(null);
+    try {
+      const response = await fetch(`/${sampleFileName}`);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok for ${sampleFileName}`);
+      }
+      const blob = await response.blob();
+      const sampleFile = new File([blob], sampleFileName, { type: "application/octet-stream" });
+      
+      setSelectedFile(sampleFile);
+
+    } catch (err) {
+      setError("Failed to load sample file. Please check the file path.");
+      console.error(err);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   const handleAnalyze = async () => {
     if (!selectedFile) { setError("Please select a file."); return; }
@@ -35,12 +59,12 @@ function App() {
     const formData = new FormData();
     formData.append('file', selectedFile);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.1:8000';
-      const url = `${apiUrl}/predict/`;
+      
+      const url = `https://spectrum-intelligence.onrender.com/predict/`;
       const response = await axios.post(url, formData);
       setAnalysisResult(response.data);
     } catch (err) {
-      setError("Analysis failed. Backend might be offline or file is invalid.");
+      setError("Analysis failed. Backend might be offline or the file is invalid.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -84,6 +108,20 @@ function App() {
               </button>
             </div>
           </div>
+
+          
+          <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Sample</h2>
+            <div className="flex flex-col space-y-4">
+                 <button onClick={() => handleSampleFile('qpsk.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                    Load QPSK Sample
+                </button>
+                 <button onClick={() => handleSampleFile('wifi.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                    Load WiFi Sample
+                </button>
+            </div>
+          </div>
+          
           {error && ( <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg"> <strong>Error:</strong>&nbsp;{error} </div> )}
           {analysisResult && (
             <div className={`p-6 border ${getResultCardStyle()} rounded-lg shadow-md`}>
