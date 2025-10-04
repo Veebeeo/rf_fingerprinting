@@ -113,11 +113,14 @@ function App() {
           <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Sample</h2>
             <div className="flex flex-col space-y-4">
-                 <button onClick={() => handleSampleFile('qpsk.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
-                    Load QPSK Sample
+                 <button onClick={() => handleSampleFile('1_stealth_incursion.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                    Load Sample 1
                 </button>
-                 <button onClick={() => handleSampleFile('wifi.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
-                    Load WiFi Sample
+                 <button onClick={() => handleSampleFile('2_disruption_attack.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                    Load Sample 2
+                </button>
+                 <button onClick={() => handleSampleFile('real_world_QPSK_test.npy')} disabled={isLoading} className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
+                    Load Sample 3
                 </button>
             </div>
           </div>
