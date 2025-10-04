@@ -105,30 +105,32 @@ function App() {
               </button>
             </div>
           </div>
+
           <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Sample</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Test with a Fast Demo Sample</h2>
             <div className="flex flex-col space-y-4">
                  <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/1_stealth_incursion.npy?download=true', '1_stealth_incursion.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_1_stealth_incursion.npy?download=true', 'demo_1_stealth_incursion.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
-                    Load Stealth Incursion
+                    Load Stealth Demo
                 </button>
                  <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/2_disruption_attack.npy?download=true', '2_disruption_attack.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_2_disruption_attack.npy?download=true', 'demo_2_disruption_attack.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
-                    Load Disruption Attack
+                    Load Disruption Demo
                 </button>
                 <button 
-                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/real_world_QPSK_test.npy?download=true', 'real_world_QPSK_test.npy')} 
+                    onClick={() => handleSampleFile('https://media.githubusercontent.com/media/Veebeeo/rf_fingerprinting/main/frontend/public/demo_real_world_QPSK_test.npy?download=true', 'demo_real_world_QPSK_test.npy')} 
                     disabled={isLoading} 
                     className="w-full bg-ocean hover:opacity-90 disabled:bg-gray-400 text-white rounded-lg px-4 py-3 font-bold transition-colors">
-                    Load QPSK Test
+                    Load QPSK Demo
                 </button>
             </div>
           </div>
         </div>
+
         <div className="lg:col-span-2 flex flex-col space-y-8">
           {error && ( <div className="p-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg"> <strong>Error:</strong>&nbsp;{error} </div> )}
           {analysisResult && (
@@ -141,6 +143,7 @@ function App() {
               </div>
             </div>
           )}
+
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
             <h3 className="font-bold text-gray-800 text-lg mb-2">Reconstruction Error Analysis</h3>
             <p className="text-sm text-gray-500 mb-4">The yellow bars highlight areas where the AI's reconstruction differed from the original signal, indicating anomalous or important features.</p>
@@ -179,6 +182,7 @@ function App() {
               <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed"><p className="text-gray-400">Analyze a signal to see the results.</p></div>
             )}
           </div>
+
           {analysisResult && analysisResult.demodulated_data && (
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
               <h3 className="font-bold text-gray-800 text-lg mb-2">Demodulated Data (QPSK)</h3>
