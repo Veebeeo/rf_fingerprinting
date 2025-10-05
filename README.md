@@ -57,6 +57,12 @@ The project is built on a modern, decoupled architecture, ensuring scalability a
 
 ---
 
+## Architecture Diagram Link
+
+[https://lucid.app/lucidchart/4d156ecd-11b6-48f2-a61e-88e65ae2bf05/edit?view_items=pePW5jqhf95l%2CpePW540d6_Mw%2CpePWGPR7Oa1S%2CpePWH2NulFd9%2CpePWBe3LywiN%2CpePWdfhz5VVs%2CpePWWZjk7nvz%2CpePWmtuC7sVu%2CpePWo8Vv8f6c%2CpePWhV4n0J_i%2CpePWu1lQ~YzI%2CpePWPvd~B](https://lucid.app/lucidchart/4d156ecd-11b6-48f2-a61e-88e65ae2bf05/edit?view_items=pePW5jqhf95l%2CpePW540d6_Mw%2CpePWGPR7Oa1S%2CpePWH2NulFd9%2CpePWBe3LywiN%2CpePWdfhz5VVs%2CpePWWZjk7nvz%2CpePWmtuC7sVu%2CpePWo8Vv8f6c%2CpePWhV4n0J_i%2CpePWu1lQ~YzI%2CpePWPvd~B)
+
+---
+
  ## How to Use the Live Demo
 
 1.  **Navigate** to the live application.
