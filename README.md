@@ -13,8 +13,6 @@
 
 **Experience Spectrum Intelligence live:** [https://rf-fingerprinting.vercel.app/](https://rf-fingerprinting.vercel.app/)
 
-![Spectrum Intelligence UI](https://i.imgur.com/your-screenshot-url.png)
-
 ---
 
 ## Project Overview
@@ -36,7 +34,7 @@ This prototype demonstrates a robust, end-to-end solution, from its intuitive us
 
 ---
 
-## Technology Stack & Architecture
+## Technology Stack
 
 The project is built on a modern, decoupled architecture, ensuring scalability and ease of maintenance.
 
@@ -53,34 +51,65 @@ The project is built on a modern, decoupled architecture, ensuring scalability a
     -   **AI/ML Library:** TensorFlow (Keras)
     -   **Deployment:** Render
 
-### Architecture Diagram
+-   **Deployment:**
+    -    **Frontend:** Vercel
+    -    **Backend:** Render
 
-```mermaid
-graph TD
-    subgraph "User"
-        A[<fa:fa-user> User in Browser]
-    end
+---
 
-    subgraph "Frontend (Hosted on Vercel)"
-        B[React Web Application]
-        C[UI: File Upload & Sample Selection]
-        D[Plotly.js Visualization]
-    end
+ ## How to Use the Live Demo
 
-    subgraph "Backend (Hosted on Render)"
-        E[FastAPI Service]
-        subgraph "AI Core (TensorFlow/Keras)"
-            F[Anomaly Detector <br> (Autoencoder)]
-            G[Classifier <br> (CNN)]
-            H[Intelligence Synthesis <br> - Calculates Error <br> - Overrides Classification]
-        end
-    end
+1.  **Navigate** to the live application.
+2.  **Select a Sample:** In the "Test with a Fast Demo Sample" card, click one of the buttons (e.g., "Load Stealth Demo").
+3.  **Analyze:** Click the "Analyze Signal" button and wait for the results to appear on the right.
+4.  **Interpret the Results:**
+    * The **Analysis Complete** card shows the final classification and whether an anomaly was detected.
+    * The **Reconstruction Error Analysis** plot visually confirms the findings. A clean signal will have very low yellow bars, while an anomalous signal will have prominent yellow spikes.
 
-    A -- "Interacts with" --> B
-    B -- "User selects/uploads .npy file" --> C
-    C -- "HTTPS POST Request" --> E
-    E --> F & G
-    F & G --> H
-    H -- "Processed JSON Result" --> E
-    E -- "HTTPS JSON Response" --> D
-    D -- "Displays Plots & Results" --> B
+---
+
+## Local Development Setup
+
+### Prerequisites
+- Node.js and npm
+- Python 3.11+ and pip
+
+### Backend Setup
+1.  Navigate to the `backend` directory:
+    ```sh
+    cd backend
+    ```
+2.  Install the required Python packages:
+    ```sh
+    pip install -r requirements.txt
+    ```
+3.  Run the FastAPI server:
+    ```sh
+    uvicorn main:app --reload
+    ```
+    The backend will be running at `http://127.0.0.1:8000`.
+
+### Frontend Setup
+1.  Navigate to the `frontend` directory:
+    ```sh
+    cd frontend
+    ```
+2.  Install the Node.js dependencies:
+    ```sh
+    npm install
+    ```
+3.  Run the development server:
+    ```sh
+    npm run dev
+    ```
+    The frontend will be available at `http://localhost:5173` (or another port if 5173 is busy).
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+---
+
+
