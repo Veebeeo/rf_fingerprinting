@@ -51,10 +51,6 @@ The project is built on a modern, decoupled architecture, ensuring scalability a
     -   **AI/ML Library:** TensorFlow (Keras)
     -   **Deployment:** Render
 
--   **Deployment:**
-    -    **Frontend:** Vercel
-    -    **Backend:** Render
-
 ---
 
 ## Architecture Diagram Link
